@@ -2,286 +2,60 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>전국 휴양림 10월 예약 오픈 지도</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>휴양림 예약 오픈 지도</title>
 
-  <!-- Leaflet core -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- AwesomeMarkers for colored pins (optional) -->
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.css" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.awesome-markers/2.0.4/leaflet.awesome-markers.js"></script>
+  <!-- PapaParse (CSV) -->
+  <script defer src="https://unpkg.com/papaparse@5.4.1/papaparse.min.js"></script>
 
-  <!-- PapaParse for CSV -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <!-- Day.js + TZ -->
+  <script defer src="https://unpkg.com/dayjs@1.11.10/dayjs.min.js"></script>
+  <script defer src="https://unpkg.com/dayjs@1.11.10/plugin/utc.js"></script>
+  <script defer src="https://unpkg.com/dayjs@1.11.10/plugin/timezone.js"></script>
 
   <style>
-    html, body { height: 100%; margin:0; }
-    #map { height: 88vh; width: 100%; }
-
-    /* UI Overlays */
-    #legend{
-      position: fixed; bottom: 16px; left: 16px; z-index: 9999;
-      background: rgba(255,255,255,.98); padding: 14px 16px;
-      border:1px solid #ced4da; border-radius:12px;
-      box-shadow:0 2px 10px rgba(0,0,0,.06); font-size:15px; line-height:1.6;
-    }
-    #controls{
-      position: fixed; top: 16px; left: 16px; z-index: 9999;
-      background: rgba(255,255,255,.98); padding: 12px 14px;
-      border:1px solid #ced4da; border-radius:12px;
-      box-shadow:0 2px 10px rgba(0,0,0,.06); font-size:14px;
-    }
-    #errorBox{
-      display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-      background:#fff; border:1px solid #ff6b6b; color:#c92a2a;
-      padding:12px 14px; border-radius:10px; z-index:10000; white-space:pre-wrap;
-    }
-    a.btn-min{ display:inline-block; padding:6px 10px; border-radius:8px;
-      border:1px solid #495057; background:#495057; color:#fff; text-decoration:none; }
-
-    /* Fallback icon (emoji-based) */
-    .emoji-pin { font-size: 18px; line-height: 18px; transform: translate(-9px, -18px); }
+    html,body{height:100%;margin:0}
+    #app{display:flex;flex-direction:column;height:100%}
+    #toolbar{padding:8px 12px;border-bottom:1px solid #e5e7eb;display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+    #map{flex:1}
+    .legend{position:absolute;right:12px;top:64px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px 14px;line-height:1.6; font-size:15px; box-shadow:0 2px 6px rgba(0,0,0,.06)}
+    .dot{display:inline-block;width:14px;height:14px;border-radius:50%;margin-right:6px;vertical-align:middle}
+    .blue{background:#1d4ed8}.green{background:#16a34a}.gray{background:#9ca3af}
+    .ctl{border:1px solid #e5e7eb;border-radius:10px;padding:8px 10px;font-size:14px}
+    .error{position:absolute;left:12px;top:64px;background:#fef2f2;border:1px solid #fecaca;color:#991b1b;padding:10px 12px;border-radius:10px;max-width:60ch}
+    .popup a{color:#1d4ed8;text-decoration:underline}
   </style>
+
+  <script defer src="./controls.js"></script>
 </head>
 <body>
-  <!-- Controls -->
-  <div id="controls">
-    <div style="font-weight:700;margin-bottom:8px">보기 설정</div>
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <label>기준 날짜:
-        <input type="date" id="refDate" style="padding:6px 8px;border:1px solid #ced4da;border-radius:8px" />
-      </label>
-      <label style="display:flex;align-items:center;gap:6px">
-        <input type="checkbox" id="onlyToday" />
-        오늘만 보기
-      </label>
-      <a class="btn-min" id="resetBtn" href="#">오늘로</a>
-    </div>
-    <div style="margin-top:6px;color:#666;font-size:12px">※ 한국시간(Asia/Seoul) 기준. 날짜를 바꾸면 색상과 표시 대상이 즉시 변경됩니다.</div>
-  </div>
+<div id="app">
+  <div id="toolbar">
+    <select id="month" class="ctl">
+      <option value="0">전체</option>
+      <option value="1">1월</option><option value="2">2월</option><option value="3">3월</option>
+      <option value="4">4월</option><option value="5">5월</option><option value="6">6월</option>
+      <option value="7">7월</option><option value="8">8월</option><option value="9">9월</option>
+      <option value="10">10월</option><option value="11">11월</option><option value="12">12월</option>
+    </select>
 
-  <!-- Legend -->
-  <div id="legend">
-    <div style="font-weight:700;margin-bottom:10px">표시 색 설명</div>
-    <div style="display:flex;align-items:center;margin-bottom:6px">
-      <span style="display:inline-block;width:14px;height:14px;background:#2E86DE;border-radius:50%;margin-right:8px"></span>
-      파란색: 오늘 오픈
-    </div>
-    <div style="display:flex;align-items:center;margin-bottom:6px">
-      <span style="display:inline-block;width:14px;height:14px;background:#2ECC71;border-radius:50%;margin-right:8px"></span>
-      초록색: 오픈 예정
-    </div>
-    <div style="display:flex;align-items:center">
-      <span style="display:inline-block;width:14px;height:14px;background:#adb5bd;border-radius:50%;margin-right:8px"></span>
-      회색: 오픈 지남
-    </div>
+    <label class="ctl"><input type="checkbox" id="todayOnly" /> 오늘만 보기</label>
+    <label class="ctl">기준일 <input type="date" id="baseDate" /></label>
   </div>
 
   <div id="map"></div>
-  <div id="errorBox"></div>
 
-  <script>
-    const CSV_URL = './data.csv';
+  <div class="legend">
+    <div><span class="dot blue"></span>오늘 오픈</div>
+    <div><span class="dot green"></span>오픈 예정</div>
+    <div><span class="dot gray"></span>오픈 지남</div>
+  </div>
 
-    function todayKST(){
-      const now = new Date();
-      const s = now.toLocaleString('en-US', { timeZone: 'Asia/Seoul' });
-      const k = new Date(s);
-      return new Date(k.getFullYear(), k.getMonth(), k.getDate());
-    }
-    function dateToYMD(d){
-      const y=d.getFullYear(), m=(d.getMonth()+1).toString().padStart(2,'0'), da=d.getDate().toString().padStart(2,'0');
-      return `${y}-${m}-${da}`;
-    }
-// 기존 parseDateOnly, parseOpenList 를 아래로 교체
-
-function parseDateOnly(str){
-  if (!str) return null;
-  let s = String(str).trim();
-  // 2025.9.5 / 2025/09/05 / 2025년 9월 5일 09:00 등 허용
-  s = s.replace(/[.\/]/g, '-')
-       .replace(/년|월/g, '-')
-       .replace(/일/g, '')
-       .replace(/\s+/g, ' ')
-       .trim();
-  const m = s.match(/(\d{4})-(\d{1,2})-(\d{1,2})(?:\s+(\d{1,2}):(\d{2}))?/);
-  if (!m) return null;
-  const y = +m[1], mo = +m[2], d = +m[3], hh = m[4]?+m[4]:0, mm = m[5]?+m[5]:0;
-  if (mo<1||mo>12||d<1||d>31) return null;
-  return new Date(y, mo-1, d, hh, mm);
-}
-function parseOpenList(s){
-  if (!s || !String(s).trim()) return [];
-  // 세미콜론(;) 또는 줄바꿈으로 분리
-  return String(s).split(/;|\n/).map(x=>x.trim()).filter(Boolean)
-    .map(parseDateOnly).filter(Boolean);
-}
-
-
-    // Safe icon creator: fallback to emoji if AwesomeMarkers missing
-    function iconByStatus(st){
-      try {
-        if (window.L && L.AwesomeMarkers && typeof L.AwesomeMarkers.icon === 'function'){
-          const color = st === 'today' ? 'blue' : (st === 'future' ? 'green' : 'gray');
-          return L.AwesomeMarkers.icon({ icon:'info-sign', markerColor: color, prefix:'glyphicon' });
-        }
-      } catch(e){ /* ignore */ }
-      const emoji = st === 'today' ? '🔵' : (st === 'future' ? '🟢' : '⚪');
-      return L.divIcon({ className:'emoji-pin', html: emoji, iconSize:[18,18], iconAnchor:[9,18] });
-    }
-    function statusFor(dates, refDate){
-      if (!dates || !dates.length) return 'unknown';
-      const ref = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate()).getTime();
-      let hasToday=false, hasFuture=false;
-      for (const d of dates){
-        const t = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
-        if (t === ref) hasToday = true;
-        else if (t > ref) hasFuture = true;
-      }
-      if (hasToday) return 'today';
-      if (hasFuture) return 'future';
-      return 'past';
-    }
-
-    // Map init
-    const map = L.map('map', { zoomControl: true }).setView([36.5, 127.9], 7);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 18, attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-
-    const markers = [];
-    const bounds = L.latLngBounds();
-// ▼▼▼ 여기 붙여넣기: 헤더 느슨 인식 헬퍼 ▼▼▼
-function getVal(row, candidates) {
-  const keys = Object.keys(row || {});
-  const strip = s => String(s||'')
-    .replace(/^\uFEFF/, '')   // BOM 제거
-    .replace(/\u00A0/g,' ')   // NBSP → space
-    .trim();
-
-  // 1) 정확/trim 일치
-  for (const want of candidates) {
-    if (want in row) return row[want];
-    const t = strip(want);
-    for (const k of keys) if (strip(k) === t) return row[k];
-  }
-  // 2) 공백 제거 후 완전일치
-  const norm = s => strip(s).replace(/\s/g,'');
-  for (const want of candidates) {
-    const w = norm(want);
-    for (const k of keys) if (norm(k) === w) return row[k];
-  }
-  // 3) 부분 포함(후보 단어가 포함되면 채택)
-  for (const want of candidates) {
-    const w = norm(want);
-    for (const k of keys) if (norm(k).includes(w)) return row[k];
-  }
-  return '';
-}
-// ▲▲▲ 여기까지 붙여넣기 ▲▲▲
-
-   function addRow(row){
-  const name = getVal(row, ['휴양림명','시설명','명칭']);
-  const reg  = getVal(row, ['권역','지역권역']);
-  const loc  = getVal(row, ['지자체','시군구','주소지']);
-  const lat  = parseFloat(getVal(row, ['위도','lat','LAT']));
-  const lon  = parseFloat(getVal(row, ['경도','lon','LON']));
-  if (isNaN(lat) || isNaN(lon)) return;
-
-  const qual     = getVal(row, ['좌표정확도','좌표정확']);
-  const opensStr = getVal(row, [
-    '9월 일반예약 오픈일시(복수)','9월 일반예약 오픈일시','오픈일시','오픈일시(복수)'
-  ]);
-  const link     = (getVal(row, ['홈페이지','URL','url']) || '').trim();
-
-  const opens = parseOpenList(opensStr);
-
-  const popupHtml = `
-    <div style="width:420px">
-      <h4 style="margin:0">${name}</h4>
-      <div>좌표 정확도: <b>${qual||'-'}</b></div>
-      <div>권역/지자체: ${reg||'-'} / ${loc||'-'}</div>
-      <div>9월 오픈일시(→10월): ${opensStr || '- (미확정)'}</div>
-      ${link ? `<div>링크: <a href="${link}" target="_blank" rel="noopener">공식/검색 링크</a></div>` : ''}
-    </div>
-  `;
-
-  const m = L.marker([lat, lon], { icon: iconByStatus('past') })
-    .bindPopup(popupHtml, { maxWidth: 460 })
-    .bindTooltip(`${name}`);
-  m.addTo(map);
-
-  markers.push({ marker: m, opens });
-  bounds.extend([lat, lon]);
-}
-
-
-    function ensureRefToday(){
-      const refInput = document.getElementById('refDate');
-      const t = todayKST();
-      refInput.value = dateToYMD(t);
-    }
-    function updateMarkers(){
-      const refInput = document.getElementById('refDate');
-      const onlyToday = document.getElementById('onlyToday').checked;
-      const ref = (function(){
-        if (!refInput.value) return todayKST();
-        const [y,m,d] = refInput.value.split('-').map(v=>parseInt(v,10));
-        if (!y || !m || !d) return todayKST();
-        return new Date(y, m-1, d);
-      })();
-
-      for (const it of markers){
-        const st = statusFor(it.opens, ref);
-        it.marker.setIcon(iconByStatus(st));
-        if (onlyToday){
-          if (st === 'today') { if (!map.hasLayer(it.marker)) it.marker.addTo(map); }
-          else { if (map.hasLayer(it.marker)) map.removeLayer(it.marker); }
-        } else {
-          if (!map.hasLayer(it.marker)) it.marker.addTo(map);
-        }
-      }
-    }
-
-    document.getElementById('refDate').addEventListener('change', updateMarkers);
-    document.getElementById('onlyToday').addEventListener('change', updateMarkers);
-    document.getElementById('resetBtn').addEventListener('click', function(e){
-      e.preventDefault(); ensureRefToday(); updateMarkers();
-    });
-
-    function showErr(msg){
-      const box = document.getElementById('errorBox');
-      box.style.display = 'block';
-      box.textContent = msg;
-    }
-
-    // Load CSV (optional)
-    Papa.parse(CSV_URL, {
-      download: true, header: true, skipEmptyLines: true,
-      complete: function(res){
-        try {
-          if (res.data && res.data.length){
-            res.data.forEach(addRow);
-            if (bounds.isValid()) map.fitBounds(bounds.pad(0.08));
-          }
-          ensureRefToday();
-          updateMarkers();
-        } catch(err){
-          showErr('데이터 처리 중 오류: ' + (err && err.message ? err.message : err));
-          console.error(err);
-          ensureRefToday();
-          updateMarkers();
-        }
-      },
-      error: function(err){
-        showErr('CSV 로드 실패: ' + (err && err.message ? err.message : err));
-        console.error(err);
-        ensureRefToday();
-        updateMarkers();
-      }
-    });
-  </script>
+  <div id="error" class="error" style="display:none"></div>
+</div>
 </body>
 </html>
