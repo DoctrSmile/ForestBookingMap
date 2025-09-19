@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>전국 휴양림 10월 예약 오픈 지도</title>
+  <meta name="format-detection" content="telephone=no" />
+  <style>
+    *{box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,'Noto Sans KR',sans-serif;margin:16px;color:#222}
+    .wrap{max-width:1100px;margin:0 auto}
+    h1{font-size:20px;margin:8px 0 6px}
+    .sub{color:#666;font-size:13px;margin-bottom:12px}
+    .btns{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
+    .btn{display:inline-block;padding:10px 14px;border-radius:10px;background:#0d6efd;color:#fff;text-decoration:none;font-weight:600}
+    .btn.secondary{background:#495057}
+    .btn:visited{color:#fff}
+    iframe.map{width:100%;height:82vh;border:1px solid #e9ecef;border-radius:12px;background:#f8f9fa}
+
+    /* Kakao in-app banner */
+    #kakao-banner{display:none;position:sticky;top:0;z-index:9999;background:#fff3cd;color:#664d03;
+      border:1px solid #ffe69c;padding:10px 12px;border-radius:10px;margin-bottom:12px}
+    #kakao-banner .btn-min{display:inline-block;padding:6px 10px;margin-left:8px;border-radius:8px;
+      border:1px solid #664d03;background:#fff;color:#664d03;text-decoration:none}
+    #kakao-banner small{display:block;color:#8c6e20;margin-top:6px}
+    .note{margin-top:10px;font-size:12px;color:#888}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <!-- 카카오 인앱 안내 배너 -->
+    <div id="kakao-banner">
+      카카오톡 인앱 브라우저에서는 지도가 정상 동작하지 않을 수 있어요.
+      <a id="open-ext" class="btn-min" target="_blank" rel="noopener">외부 브라우저로 열기</a>
+      <button id="copy-url" class="btn-min" type="button">URL 복사</button>
+      <small>안 되면 우측 상단 ⋯ → “기본 브라우저로 열기”를 눌러주세요.</small>
+    </div>
+
+    <h1>전국 휴양림 10월 예약 오픈 지도</h1>
+    <div class="sub">공식 URL 우선, 미확인 시설은 숲나들e 검색결과로 연결됩니다.</div>
+
+    <div class="btns">
+      <a class="btn" href="./map.html" target="_blank" rel="noopener">지도를 새 창에서 열기</a>
+      <a class="btn secondary" href="./전시설_9월오픈_지도데이터.xlsx" download>엑셀 다운로드</a>
+    </div>
+
+    <!-- 페이지 내 임베드 -->
+    <iframe class="map" src="./map.html" title="휴양림 지도" loading="lazy" referrerpolicy="no-referrer"></iframe>
+
+    <div class="note">이 페이지는 GitHub Pages로 제공됩니다.</div>
+  </div>
+
+  <!-- Kakao in-app detection -->
+  <script>
+    (function () {
+      var ua = navigator.userAgent || "";
+      var inKakao = /KAKAOTALK/i.test(ua);
+      if (!inKakao) return;
+
+      var banner = document.getElementById("kakao-banner");
+      var openBtn = document.getElementById("open-ext");
+      var copyBtn = document.getElementById("copy-url");
+      var url = location.href.split("#")[0];
+
+      // 기본: 현재 URL 새 창으로 (OS 기본 브라우저가 처리)
+      openBtn.href = url;
+
+      // Android: Chrome intent 시도
+      if (/Android/i.test(ua)) {
+        try {
+          var proto = location.protocol.replace(":", "");
+          var hostPath = location.host + location.pathname;
+          openBtn.href = "intent://" + hostPath + "#Intent;scheme=" + proto + ";package=com.android.chrome;end";
+        } catch(e) {}
+      }
+
+      copyBtn.onclick = function () {
+        (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject())
+          .then(function(){ copyBtn.textContent="복사됨!"; })
+          .catch(function(){
+            var ta = document.createElement("textarea");
+            ta.value = url; document.body.appendChild(ta);
+            ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
+            copyBtn.textContent="복사됨!";
+          });
+      };
+
+      banner.style.display = "block";
+    })();
+  </script>
+</body>
+</html>
