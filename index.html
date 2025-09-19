@@ -2,91 +2,45 @@
 <html lang="ko">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>전국 휴양림 10월 예약 오픈 지도</title>
-  <meta name="format-detection" content="telephone=no" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>휴양림 예약 오픈 지도 (2025)</title>
   <style>
-    *{box-sizing:border-box}
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Apple SD Gothic Neo,'Noto Sans KR',sans-serif;margin:16px;color:#222}
-    .wrap{max-width:1100px;margin:0 auto}
-    h1{font-size:20px;margin:8px 0 6px}
-    .sub{color:#666;font-size:13px;margin-bottom:12px}
-    .btns{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 12px}
-    .btn{display:inline-block;padding:10px 14px;border-radius:10px;background:#0d6efd;color:#fff;text-decoration:none;font-weight:600}
-    .btn.secondary{background:#495057}
-    .btn:visited{color:#fff}
-    iframe.map{width:100%;height:82vh;border:1px solid #e9ecef;border-radius:12px;background:#f8f9fa}
-
-    /* Kakao in-app banner */
-    #kakao-banner{display:none;position:sticky;top:0;z-index:9999;background:#fff3cd;color:#664d03;
-      border:1px solid #ffe69c;padding:10px 12px;border-radius:10px;margin-bottom:12px}
-    #kakao-banner .btn-min{display:inline-block;padding:6px 10px;margin-left:8px;border-radius:8px;
-      border:1px solid #664d03;background:#fff;color:#664d03;text-decoration:none}
-    #kakao-banner small{display:block;color:#8c6e20;margin-top:6px}
-    .note{margin-top:10px;font-size:12px;color:#888}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,Apple Color Emoji,Noto Color Emoji; margin:0; padding:24px; line-height:1.5}
+    .card{max-width:780px;margin:0 auto;padding:24px;border:1px solid #e5e7eb;border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+    h1{font-size:24px;margin:0 0 12px}
+    .tip{background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12;padding:12px;border-radius:12px;margin:12px 0}
+    .btn{display:inline-block;padding:12px 16px;border-radius:12px;background:#1d4ed8;color:#fff;text-decoration:none;font-weight:600}
+    .btn + .btn{margin-left:8px}
+    code{background:#f3f4f6;padding:2px 6px;border-radius:6px}
   </style>
+  <script>
+    // 카카오/인앱 브라우저 경고
+    document.addEventListener('DOMContentLoaded', () => {
+      const ua = navigator.userAgent || '';
+      const inApp = /(KAKAOTALK|NAVER|FBAN|FBAV|Instagram)/i.test(ua);
+      if(inApp){
+        const el = document.getElementById('inapp');
+        el.style.display='block';
+      }
+    });
+  </script>
 </head>
 <body>
-  <div class="wrap">
-    <!-- 카카오 인앱 안내 배너 -->
-    <div id="kakao-banner">
-      카카오톡 인앱 브라우저에서는 지도가 정상 동작하지 않을 수 있어요.
-      <a id="open-ext" class="btn-min" target="_blank" rel="noopener">외부 브라우저로 열기</a>
-      <button id="copy-url" class="btn-min" type="button">URL 복사</button>
-      <small>안 되면 우측 상단 ⋯ → “기본 브라우저로 열기”를 눌러주세요.</small>
+  <div class="card">
+    <h1>휴양림 예약 오픈 지도 (2025)</h1>
+    <p>아래 버튼으로 지도를 여세요. <code>data_2025_map.csv</code>를 기본으로 사용합니다.</p>
+
+    <div id="inapp" class="tip" style="display:none;">
+      ⚠️ 인앱 브라우저에서 일부 기능이 동작하지 않을 수 있어요. 상단 메뉴의 <b>기본 브라우저로 열기</b>를 사용하세요.
     </div>
 
-    <h1>전국 휴양림 10월 예약 오픈 지도</h1>
-    <div class="sub">공식 URL 우선, 미확인 시설은 숲나들e 검색결과로 연결됩니다.</div>
+    <p>
+      <a class="btn" href="./map.html?csv=data_2025_map.csv&d=2025-01-01">지도로 보기</a>
+    </p>
 
-    <div class="btns">
-      <a class="btn" href="./map.html" target="_blank" rel="noopener">지도를 새 창에서 열기</a>
-      <a class="btn secondary" href="./전시설_9월오픈_지도데이터.xlsx" download>엑셀 다운로드</a>
-    </div>
-
-    <!-- 페이지 내 임베드 -->
-    <iframe class="map" src="./map.html" title="휴양림 지도" loading="lazy" referrerpolicy="no-referrer"></iframe>
-
-    <div class="note">이 페이지는 GitHub Pages로 제공됩니다.</div>
+    <p style="color:#6b7280">
+      다른 CSV를 쓰려면 <code>?csv=파일명.csv</code>, 좌표 파일을 바꾸려면 <code>?coords=파일명.csv</code>를 추가하세요.
+    </p>
   </div>
-
-  <!-- Kakao in-app detection -->
-  <script>
-    (function () {
-      var ua = navigator.userAgent || "";
-      var inKakao = /KAKAOTALK/i.test(ua);
-      if (!inKakao) return;
-
-      var banner = document.getElementById("kakao-banner");
-      var openBtn = document.getElementById("open-ext");
-      var copyBtn = document.getElementById("copy-url");
-      var url = location.href.split("#")[0];
-
-      // 기본: 현재 URL 새 창으로 (OS 기본 브라우저가 처리)
-      openBtn.href = url;
-
-      // Android: Chrome intent 시도
-      if (/Android/i.test(ua)) {
-        try {
-          var proto = location.protocol.replace(":", "");
-          var hostPath = location.host + location.pathname;
-          openBtn.href = "intent://" + hostPath + "#Intent;scheme=" + proto + ";package=com.android.chrome;end";
-        } catch(e) {}
-      }
-
-      copyBtn.onclick = function () {
-        (navigator.clipboard ? navigator.clipboard.writeText(url) : Promise.reject())
-          .then(function(){ copyBtn.textContent="복사됨!"; })
-          .catch(function(){
-            var ta = document.createElement("textarea");
-            ta.value = url; document.body.appendChild(ta);
-            ta.select(); document.execCommand("copy"); document.body.removeChild(ta);
-            copyBtn.textContent="복사됨!";
-          });
-      };
-
-      banner.style.display = "block";
-    })();
-  </script>
 </body>
 </html>
